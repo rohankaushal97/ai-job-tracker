@@ -33,7 +33,7 @@ def fetch_linkedin_jobs():
 
     return jobs
     
-def is_recent(date_str):
+"""def is_recent(date_str):
     try:
         if not date_str:
             return True  # keep if unknown
@@ -49,8 +49,26 @@ def is_recent(date_str):
 
         return False
     except:
-        return True
+        return True"""
 
+def mark_recent(date_str):
+    try:
+        if not date_str:
+            return "unknown"
+
+        date_str = str(date_str).lower()
+
+        if "hour" in date_str or "today" in date_str:
+            return "very recent"
+        elif "day" in date_str:
+            return "recent"
+        elif "week" in date_str:
+            return "okay"
+        else:
+            return "old"
+    except:
+        return "unknown"
+        
 def match_keywords(text):
     return any(k in text.lower() for k in KEYWORDS)
 
@@ -215,9 +233,9 @@ def run():
     print(df.head())
 
     df = df.drop_duplicates()
-    df = df[df["date"].apply(is_recent)]
+    df["recency"] = df["date"].apply(mark_recent)
+    #df = df[df["date"].apply(is_recent)]
     
-
     upload_to_sheets(df)
     
     print(f"Total jobs collected: {len(df)}")
