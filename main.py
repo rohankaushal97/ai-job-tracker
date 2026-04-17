@@ -3,17 +3,53 @@ import pandas as pd
 from datetime import datetime, timedelta
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from serpapi import GoogleSearch
 import os
 
 KEYWORDS = ["ai", "artificial intelligence", "machine learning", "ml", "deep learning", "nlp", "computer vision", "predictive modeling", "feature engineering", "model deployment", "mlops", "ai strategy", "ai transformation", "responsible ai", "ai governance", "genai", "llm", "prompt engineering", "rag", "vector databases", "fine tuning", "automation", "intelligent automation", "data", "data science", "data analysis", "data modeling", "data visualization", "business intelligence", "analytics", "sql", "python", "statistics", "hypothesis testing", "a b testing", "forecasting", "data pipelines", "etl", "big data", "data driven decision making", "kpi tracking", "product manager", "product management", "product strategy", "product lifecycle", "product roadmap", "go to market", "gtm strategy", "user research", "user experience", "ux", "customer journey", "product analytics", "feature prioritization", "stakeholder management", "agile", "scrum", "mvp", "product discovery", "consultant", "management consulting", "business strategy", "growth strategy", "digital transformation", "operating model", "process optimization", "market entry", "competitive analysis", "benchmarking", "problem solving", "structured thinking", "client engagement", "c suite", "change management", "analyst", "business analyst", "business analysis", "requirements gathering", "process mapping", "gap analysis", "root cause analysis", "financial modeling", "excel modeling", "reporting", "insights generation", "decision support", "power bi", "tableau", "excel", "advanced excel", "google analytics", "jira", "confluence", "figma", "notion", "aws", "azure", "gcp"]
 DAYS_LIMIT = 5
 
+def fetch_linkedin_jobs():
+    params = {
+        "engine": "google_jobs",
+        "q": "AI Product Manager OR Data Analyst OR Consultant India",
+        "location": "India",
+        "api_key": os.getenv("SERPAPI_KEY")
+    }
+
+    search = GoogleSearch(params)
+    results = search.get_dict()
+
+    jobs = []
+
+    for job in results.get("jobs_results", []):
+        jobs.append({
+            "company": job.get("company_name", ""),
+            "title": job.get("title", ""),
+            "location": job.get("location", ""),
+            "url": job.get("related_links", [{}])[0].get("link", ""),
+            "date": job.get("detected_extensions", {}).get("posted_at", "")
+        })
+
+    return jobs
+    
 def is_recent(date_str):
     try:
-        posted = datetime.fromisoformat(date_str.replace("Z", ""))
-        return posted > datetime.now() - timedelta(days=DAYS_LIMIT)
-    except:
+        if not date_str:
+            return True  # keep if unknown
+
+        date_str = str(date_str).lower()
+
+        if "day" in date_str:
+            return True
+        if "hour" in date_str:
+            return True
+        if "today" in date_str or "just posted" in date_str:
+            return True
+
         return False
+    except:
+        return True
 
 def match_keywords(text):
     return any(k in text.lower() for k in KEYWORDS)
@@ -138,16 +174,49 @@ def run():
     for c in companies_lever:
         jobs.extend(fetch_lever(c))
     print(f"Total jobs before filtering: {len(jobs)}")
-    df = pd.DataFrame(jobs)
+    
+    # ✅ NEW LinkedIn/Google Jobs
+    jobs.extend(fetch_linkedin_jobs())
 
+    df = pd.DataFrame(jobs)
+    
+    # Normalize location
+    df["location"] = df["location"].astype(str).str.lower()
+    
+    india_keywords = [
+        "india", "bangalore", "bengaluru", "hyderabad",
+        "pune", "mumbai", "gurgaon", "delhi", "noida", "chennai", "remote"
+    ]
+    
+    df = df[df["location"].apply(lambda x: any(k in x for k in india_keywords))]
+
+    """df["company"] = df["company"].astype(str).str.lower()
+
+    target_companies = [
+        "tata", "wipro", "hcl", "tech mahindra",
+        "accenture", "capgemini", "cognizant",
+        "ibm", "oracle", "microsoft", "google",
+        "amazon", "adobe", "salesforce", "sap",
+        "intel", "qualcomm", "nvidia", "cisco",
+        "flipkart", "meesho", "swiggy", "zomato",
+        "paytm", "razorpay", "phonepe",
+        "zoho", "freshworks",
+        "cred", "groww", "zerodha",
+        "mckinsey", "bcg", "bain", "deloitte",
+        "pwc", "ey", "kpmg"
+    ]
+
+    df = df[df["company"].apply(lambda x: any(c in x for c in target_companies) if x else False)]"""
+        
     if df.empty:
         return
     
     print(f"Total jobs after filtering: {len(df)}")
     print(df.head())
+
+    df = df.drop_duplicates()
+    df = df[df["date"].apply(is_recent)]
     
-    #df = df[df["date"].apply(is_recent)]
-    #df = df.drop_duplicates()
 
     upload_to_sheets(df)
     
