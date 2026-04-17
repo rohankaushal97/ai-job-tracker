@@ -35,17 +35,35 @@ def fetch_greenhouse(company):
 
 def fetch_lever(company):
     url = f"https://api.lever.co/v0/postings/{company}?mode=json"
-    res = requests.get(url).json()
+    
+    try:
+        res = requests.get(url)
+        data = res.json()
+    except:
+        return []
+
     jobs = []
-    for job in res:
-        if match_keywords(job["text"]):
+
+    # ✅ safety check
+    if not isinstance(data, list):
+        return []
+
+    for job in data:
+        # ✅ skip bad entries
+        if not isinstance(job, dict):
+            continue
+
+        title = job.get("text", "")
+
+        if match_keywords(title):
             jobs.append({
                 "company": company,
-                "title": job["text"],
-                "location": job["categories"]["location"],
-                "url": job["hostedUrl"],
-                "date": str(job["createdAt"])
+                "title": title,
+                "location": job.get("categories", {}).get("location", ""),
+                "url": job.get("hostedUrl", ""),
+                "date": str(job.get("createdAt", ""))
             })
+
     return jobs
 
 def upload_to_sheets(df):
