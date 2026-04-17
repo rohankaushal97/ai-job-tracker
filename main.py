@@ -86,7 +86,6 @@ def upload_to_sheets(df):
 
 def run():
     print("RUN STARTED")
-    print(f"Total jobs before filtering: {len(jobs)}")
     companies_greenhouse = [
     "openai",
     "stripe",
@@ -131,13 +130,14 @@ def run():
 ]
 
     jobs = []
+    
 
     for c in companies_greenhouse:
         jobs.extend(fetch_greenhouse(c))
 
     for c in companies_lever:
         jobs.extend(fetch_lever(c))
-
+    print(f"Total jobs before filtering: {len(jobs)}")
     df = pd.DataFrame(jobs)
 
     if df.empty:
