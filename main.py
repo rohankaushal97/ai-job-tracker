@@ -5,14 +5,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import os
 
-KEYWORDS = [
-    "ai", "artificial intelligence", "machine learning",
-    "ml", "data", "analytics",
-    "product manager", "product",
-    "consultant", "strategy",
-    "analyst", "business analyst",
-    "genai", "llm"
-]
+KEYWORDS = ["ai", "artificial intelligence", "machine learning", "ml", "deep learning", "nlp", "computer vision", "predictive modeling", "feature engineering", "model deployment", "mlops", "ai strategy", "ai transformation", "responsible ai", "ai governance", "genai", "llm", "prompt engineering", "rag", "vector databases", "fine tuning", "automation", "intelligent automation", "data", "data science", "data analysis", "data modeling", "data visualization", "business intelligence", "analytics", "sql", "python", "statistics", "hypothesis testing", "a b testing", "forecasting", "data pipelines", "etl", "big data", "data driven decision making", "kpi tracking", "product manager", "product management", "product strategy", "product lifecycle", "product roadmap", "go to market", "gtm strategy", "user research", "user experience", "ux", "customer journey", "product analytics", "feature prioritization", "stakeholder management", "agile", "scrum", "mvp", "product discovery", "consultant", "management consulting", "business strategy", "growth strategy", "digital transformation", "operating model", "process optimization", "market entry", "competitive analysis", "benchmarking", "problem solving", "structured thinking", "client engagement", "c suite", "change management", "analyst", "business analyst", "business analysis", "requirements gathering", "process mapping", "gap analysis", "root cause analysis", "financial modeling", "excel modeling", "reporting", "insights generation", "decision support", "power bi", "tableau", "excel", "advanced excel", "google analytics", "jira", "confluence", "figma", "notion", "aws", "azure", "gcp"]
 DAYS_LIMIT = 5
 
 def is_recent(date_str):
@@ -89,8 +82,11 @@ def upload_to_sheets(df):
     sheet = client.open("AI Job Tracker").sheet1
     sheet.clear()
     sheet.update([df.columns.values.tolist()] + df.values.tolist())
+    print("UPLOADING TO SHEETS...")
 
 def run():
+    print("RUN STARTED")
+    print(f"Total jobs before filtering: {len(jobs)}")
     companies_greenhouse = [
     "openai",
     "stripe",
@@ -146,11 +142,15 @@ def run():
 
     if df.empty:
         return
-
-    df = df[df["date"].apply(is_recent)]
-    df = df.drop_duplicates()
+    
+    print(f"Total jobs after filtering: {len(df)}")
+    print(df.head())
+    
+    #df = df[df["date"].apply(is_recent)]
+    #df = df.drop_duplicates()
 
     upload_to_sheets(df)
+    
     print(f"Total jobs collected: {len(df)}")
 
 if __name__ == "__main__":
