@@ -10,28 +10,41 @@ KEYWORDS = ["ai", "artificial intelligence", "machine learning", "ml", "deep lea
 DAYS_LIMIT = 5
 
 def fetch_linkedin_jobs():
-    params = {
-        "engine": "google_jobs",
-        "q": "AI Product Manager OR Data Analyst OR Consultant India",
-        "location": "India",
-        "api_key": os.getenv("SERPAPI_KEY")
-    }
+    queries = ["Product Manager", "Associate Product Manager (APM)", "Program Manager", "Technical Program Manager (TPM)", "Business Analyst",
+"Senior Business Analyst", "Data Analyst", "Machine Learning Engineer", "GenAI Engineer", "LLM Engineer",
+"Prompt Engineer", "AI Product Manager", "Growth Product Manager", "Product Operations Manager", "Strategy Associate", "Strategy Consultant",
+"Management Consultant", "Business Consultant", "Operations Manager", "Operations Strategy Manager", "Supply Chain Analyst", "Category Manager",
+"Revenue Manager", "Pricing Analyst", "Marketing Manager", "Performance Marketing Manager", "Growth Manager", "Digital Marketing Manager",
+"Brand Manager", "Sales Strategy Manager", "Account Manager (Enterprise)", "Customer Success Manager", "GTM (Go-To-Market) Manager",
+"Investment Banking Analyst", "Equity Research Analyst", "Financial Analyst", "Corporate Finance Associate", "Risk Analyst", "Product Analyst",
+"Data Product Manager", "Analytics Consultant", "AI/ML Consultant",  "Cloud Solutions Architect", "Solutions Consultant", "Pre-Sales Consultant",
+"Techno-Functional Consultant", "ERP Consultant (SAP/Oracle)", "Cybersecurity Analyst", "MLOps Engineer", "AI Governance Specialist", 
+"AI Operations (AIOps) Engineer", "AI Orchestration Specialist", "Business Intelligence (BI) Analyst", "Decision Scientist", "Experimentation Analyst (A/B Testing)",
+"Startup Founder’s Office Role", "Chief of Staff (early career)", "Venture Capital Analyst", "Private Equity Analyst"    ]
 
-    search = GoogleSearch(params)
-    results = search.get_dict()
+    all_jobs = []
 
-    jobs = []
+    for q in queries:
+        params = {
+            "engine": "google_jobs",
+            "q": q,
+            "location": "India",
+            "api_key": os.getenv("SERPAPI_KEY")
+        }
 
-    for job in results.get("jobs_results", []):
-        jobs.append({
-            "company": job.get("company_name", ""),
-            "title": job.get("title", ""),
-            "location": job.get("location", ""),
-            "url": job.get("related_links", [{}])[0].get("link", ""),
-            "date": job.get("detected_extensions", {}).get("posted_at", "")
-        })
+        search = GoogleSearch(params)
+        results = search.get_dict()
 
-    return jobs
+        for job in results.get("jobs_results", []):
+            all_jobs.append({
+                "company": job.get("company_name", ""),
+                "title": job.get("title", ""),
+                "location": job.get("location", ""),
+                "url": job.get("related_links", [{}])[0].get("link", ""),
+                "date": job.get("detected_extensions", {}).get("posted_at", "")
+            })
+
+    return all_jobs
     
 """def is_recent(date_str):
     try:
@@ -197,7 +210,12 @@ def run():
     jobs.extend(fetch_linkedin_jobs())
 
     df = pd.DataFrame(jobs)
-    
+
+    df = df.sort_values(by="company")
+
+# keep max 3 jobs per company
+    df = df.groupby("company").head(3)
+
     # Normalize location
     df["location"] = df["location"].astype(str).str.lower()
     
