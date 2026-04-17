@@ -5,8 +5,15 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import os
 
-KEYWORDS = ["genai", "llm", "ai", "product manager", "analyst", "consultant"]
-DAYS_LIMIT = 10
+KEYWORDS = [
+    "ai", "artificial intelligence", "machine learning",
+    "ml", "data", "analytics",
+    "product manager", "product",
+    "consultant", "strategy",
+    "analyst", "business analyst",
+    "genai", "llm"
+]
+DAYS_LIMIT = 5
 
 def is_recent(date_str):
     try:
@@ -55,7 +62,7 @@ def fetch_lever(company):
 
         title = job.get("text", "")
 
-        if match_keywords(title):
+        if True:
             jobs.append({
                 "company": company,
                 "title": title,
@@ -84,8 +91,48 @@ def upload_to_sheets(df):
     sheet.update([df.columns.values.tolist()] + df.values.tolist())
 
 def run():
-    companies_greenhouse = ["openai", "stripe", "airbnb"]
-    companies_lever = ["figma", "netflix"]
+    companies_greenhouse = [
+    "openai",
+    "stripe",
+    "airbnb",
+    "robinhood",
+    "discord",
+    "notion",
+    "pinterest",
+    "coinbase",
+    "dropbox",
+    "shopify",
+    "canva",
+    "instacart",
+    "databricks",
+    "snowflake",
+    "plaid",
+    "brex",
+    "zapier",
+    "razorpay",
+    "cred",
+    "meesho",
+    "groww",
+    "swiggy",
+    "urbancompany"
+]
+    companies_lever = [
+    "figma",
+    "netflix",
+    "atlassian",
+    "udemy",
+    "robinhood",
+    "asana",
+    "circle",
+    "scaleai",
+    "rippling",
+    "segment",
+    "hashicorp",
+    "postman",
+    "sharechat",
+    "browserstack",
+    "instahyre"
+]
 
     jobs = []
 
@@ -104,6 +151,7 @@ def run():
     df = df.drop_duplicates()
 
     upload_to_sheets(df)
+    print(f"Total jobs collected: {len(df)}")
 
 if __name__ == "__main__":
     run()
