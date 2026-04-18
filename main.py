@@ -10,40 +10,47 @@ KEYWORDS = ["ai", "artificial intelligence", "machine learning", "ml", "deep lea
 DAYS_LIMIT = 5
 
 def fetch_linkedin_jobs():
-    queries = ["Product Manager", "Associate Product Manager (APM)", "Program Manager", "Technical Program Manager (TPM)", "Business Analyst",
-"Senior Business Analyst", "Data Analyst", "Machine Learning Engineer", "GenAI Engineer", "LLM Engineer",
-"Prompt Engineer", "AI Product Manager", "Growth Product Manager", "Product Operations Manager", "Strategy Associate", "Strategy Consultant",
-"Management Consultant", "Business Consultant", "Operations Manager", "Operations Strategy Manager", "Supply Chain Analyst", "Category Manager",
-"Revenue Manager", "Pricing Analyst", "Marketing Manager", "Performance Marketing Manager", "Growth Manager", "Digital Marketing Manager",
-"Brand Manager", "Sales Strategy Manager", "Account Manager (Enterprise)", "Customer Success Manager", "GTM (Go-To-Market) Manager",
-"Investment Banking Analyst", "Equity Research Analyst", "Financial Analyst", "Corporate Finance Associate", "Risk Analyst", "Product Analyst",
-"Data Product Manager", "Analytics Consultant", "AI/ML Consultant",  "Cloud Solutions Architect", "Solutions Consultant", "Pre-Sales Consultant",
-"Techno-Functional Consultant", "ERP Consultant (SAP/Oracle)", "Cybersecurity Analyst", "MLOps Engineer", "AI Governance Specialist", 
-"AI Operations (AIOps) Engineer", "AI Orchestration Specialist", "Business Intelligence (BI) Analyst", "Decision Scientist", "Experimentation Analyst (A/B Testing)",
-"Startup Founder’s Office Role", "Chief of Staff (early career)", "Venture Capital Analyst", "Private Equity Analyst"    ]
+    queries = [
+"site:linkedin.com/jobs product manager", "site:linkedin.com/jobs associate product manager", "site:linkedin.com/jobs technical program manager",
+"site:linkedin.com/jobs business analyst", "site:linkedin.com/jobs data analyst", "site:linkedin.com/jobs product analyst", "site:linkedin.com/jobs machine learning engineer",
+"site:linkedin.com/jobs GenAI engineer", "site:linkedin.com/jobs LLM engineer", "site:linkedin.com/jobs AI product manager", "site:linkedin.com/jobs data product manager",
+"site:linkedin.com/jobs MLOps engineer", "site:linkedin.com/jobs business intelligence analyst", "site:linkedin.com/jobs decision scientist", "site:linkedin.com/jobs strategy consultant",
+"site:linkedin.com/jobs management consultant", "site:linkedin.com/jobs business consultant", "site:linkedin.com/jobs analytics consultant", "site:linkedin.com/jobs AI ML consultant",
+"site:linkedin.com/jobs operations manager", "site:linkedin.com/jobs supply chain analyst",  "site:linkedin.com/jobs marketing manager", "site:linkedin.com/jobs growth manager",
+"site:linkedin.com/jobs digital marketing manager", "site:linkedin.com/jobs performance marketing manager", "site:linkedin.com/jobs investment banking analyst",
+"site:linkedin.com/jobs equity research analyst", "site:linkedin.com/jobs financial analyst", "site:linkedin.com/jobs venture capital analyst", "site:linkedin.com/jobs private equity analyst"
+]
 
     all_jobs = []
 
     for q in queries:
+        print("SEARCHING:", q)
+
         params = {
-            "engine": "google_jobs",
+            "engine": "google",   # ✅ IMPORTANT CHANGE
             "q": q,
-            "location": "India",
+            "num": 20,
             "api_key": os.getenv("SERPAPI_KEY")
         }
 
         search = GoogleSearch(params)
         results = search.get_dict()
 
-        for job in results.get("jobs_results", []):
-            all_jobs.append({
-                "company": job.get("company_name", ""),
-                "title": job.get("title", ""),
-                "location": job.get("location", ""),
-                "url": job.get("related_links", [{}])[0].get("link", ""),
-                "date": job.get("detected_extensions", {}).get("posted_at", "")
-            })
+        for res in results.get("organic_results", []):
+            link = res.get("link", "")
+            title = res.get("title", "")
 
+            # Only keep LinkedIn job links
+            if "linkedin.com/jobs" in link:
+                all_jobs.append({
+                    "company": "linkedin",
+                    "title": title.replace(" | LinkedIn", ""),
+                    "location": "india",
+                    "url": link,
+                    "date": "recent"
+                })
+
+    print("TOTAL LINKEDIN JOBS:", len(all_jobs))
     return all_jobs
     
 """def is_recent(date_str):
@@ -125,7 +132,7 @@ def fetch_lever(company):
         if True:
             jobs.append({
                 "company": company,
-                "title": title,
+                "title": title.replace(" | LinkedIn", ""),
                 "location": job.get("categories", {}).get("location", ""),
                 "url": job.get("hostedUrl", ""),
                 "date": str(job.get("createdAt", ""))
