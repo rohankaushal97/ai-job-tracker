@@ -153,61 +153,28 @@ def upload_to_sheets(df):
 
 def run():
     print("RUN STARTED")
-    companies_greenhouse = [
-    "openai",
-    "stripe",
-    "airbnb",
-    "robinhood",
-    "discord",
-    "notion",
-    "pinterest",
-    "coinbase",
-    "dropbox",
-    "shopify",
-    "canva",
-    "instacart",
-    "databricks",
-    "snowflake",
-    "plaid",
-    "brex",
-    "zapier",
-    "razorpay",
-    "cred",
-    "meesho",
-    "groww",
-    "swiggy",
-    "urbancompany"
-]
+    companies_greenhouse = [ "openai",    "stripe",    "airbnb",    "robinhood",    "discord",    "notion",    "pinterest",    "coinbase",    "dropbox",
+    "shopify",    "canva",    "instacart",    "databricks",    "snowflake",    "plaid",    "brex",    "zapier",    "razorpay",    "cred",    "meesho",
+    "groww",    "swiggy",    "urbancompany"]
+
     companies_lever = [
-    "figma",
-    "netflix",
-    "atlassian",
-    "udemy",
-    "robinhood",
-    "asana",
-    "circle",
-    "scaleai",
-    "rippling",
-    "segment",
-    "hashicorp",
-    "postman",
-    "sharechat",
-    "browserstack",
-    "instahyre"
-]
+    "figma",    "netflix",    "atlassian",    "udemy",    "robinhood",    "asana",    "circle",    "scaleai",    "rippling",    "segment",
+    "hashicorp",    "postman",    "sharechat",    "browserstack",    "instahyre"]
 
     jobs = []
     
-
     for c in companies_greenhouse:
         jobs.extend(fetch_greenhouse(c))
 
     for c in companies_lever:
         jobs.extend(fetch_lever(c))
+        
     print(f"Total jobs before filtering: {len(jobs)}")
     
     # ✅ NEW LinkedIn/Google Jobs
-    jobs.extend(fetch_linkedin_jobs())
+    linkedin_jobs = fetch_linkedin_jobs()
+    print("LinkedIn jobs:", len(linkedin_jobs))
+    jobs.extend(linkedin_jobs)
 
     df = pd.DataFrame(jobs)
 
