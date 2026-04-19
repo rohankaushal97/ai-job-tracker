@@ -1,10 +1,12 @@
 import requests
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from serpapi import GoogleSearch
 import os
+import re
+
 
 KEYWORDS = ["ai", "artificial intelligence", "machine learning", "ml", "deep learning", "nlp", "computer vision", "predictive modeling", "feature engineering", "model deployment", "mlops", "ai strategy", "ai transformation", "responsible ai", "ai governance", "genai", "llm", "prompt engineering", "rag", "vector databases", "fine tuning", "automation", "intelligent automation", "data", "data science", "data analysis", "data modeling", "data visualization", "business intelligence", "analytics", "sql", "python", "statistics", "hypothesis testing", "a b testing", "forecasting", "data pipelines", "etl", "big data", "data driven decision making", "kpi tracking", "product manager", "product management", "product strategy", "product lifecycle", "product roadmap", "go to market", "gtm strategy", "user research", "user experience", "ux", "customer journey", "product analytics", "feature prioritization", "stakeholder management", "agile", "scrum", "mvp", "product discovery", "consultant", "management consulting", "business strategy", "growth strategy", "digital transformation", "operating model", "process optimization", "market entry", "competitive analysis", "benchmarking", "problem solving", "structured thinking", "client engagement", "c suite", "change management", "analyst", "business analyst", "business analysis", "requirements gathering", "process mapping", "gap analysis", "root cause analysis", "financial modeling", "excel modeling", "reporting", "insights generation", "decision support", "power bi", "tableau", "excel", "advanced excel", "google analytics", "jira", "confluence", "figma", "notion", "aws", "azure", "gcp"]
 DAYS_LIMIT = 5
@@ -42,7 +44,7 @@ def fetch_linkedin_jobs():
             "q": q,
             "num": 20,
             "api_key": os.getenv("SERPAPI_KEY"),
-            "tbs": "qdr:d"   # ✅ last 24 hours
+            "tbs": "qdr:w"   # ✅ last 24 hours
         }
 
         search = GoogleSearch(params)
@@ -91,16 +93,56 @@ def mark_recent(date_str):
         if not date_str:
             return "unknown"
 
-        date_str = str(date_str).lower()
+        text = str(date_str).lower()
 
-        if "hour" in date_str or "today" in date_str:
+        # ✅ Handle "X days/weeks ago"
+        match = re.search(r"(\d+)\s*(hour|day|week|month)", text)
+        if match:
+            value = int(match.group(1))
+            unit = match.group(2)
+
+            if unit == "hour":
+                return "very recent"
+            elif unit == "day":
+                if value <= 1:
+                    return "very recent"
+                elif value <= 3:
+                    return "recent"
+                elif value <= 7:
+                    return "okay"
+                else:
+                    return "old"
+            elif unit == "week":
+                if value == 1:
+                    return "okay"
+                else:
+                    return "old"
+            elif unit == "month":
+                return "old"
+
+        # ✅ Handle "today"
+        if "today" in text:
             return "very recent"
-        elif "day" in date_str:
-            return "recent"
-        elif "week" in date_str:
-            return "okay"
-        else:
-            return "old"
+
+        # ✅ Handle ISO timestamps
+        try:
+            dt = datetime.fromisoformat(text.replace("z", "+00:00"))
+            now = datetime.now(timezone.utc)
+            diff = now - dt
+
+            if diff.days <= 1:
+                return "very recent"
+            elif diff.days <= 3:
+                return "recent"
+            elif diff.days <= 7:
+                return "okay"
+            else:
+                return "old"
+        except:
+            pass
+
+        return "unknown"
+
     except:
         return "unknown"
         
