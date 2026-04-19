@@ -9,6 +9,17 @@ import os
 KEYWORDS = ["ai", "artificial intelligence", "machine learning", "ml", "deep learning", "nlp", "computer vision", "predictive modeling", "feature engineering", "model deployment", "mlops", "ai strategy", "ai transformation", "responsible ai", "ai governance", "genai", "llm", "prompt engineering", "rag", "vector databases", "fine tuning", "automation", "intelligent automation", "data", "data science", "data analysis", "data modeling", "data visualization", "business intelligence", "analytics", "sql", "python", "statistics", "hypothesis testing", "a b testing", "forecasting", "data pipelines", "etl", "big data", "data driven decision making", "kpi tracking", "product manager", "product management", "product strategy", "product lifecycle", "product roadmap", "go to market", "gtm strategy", "user research", "user experience", "ux", "customer journey", "product analytics", "feature prioritization", "stakeholder management", "agile", "scrum", "mvp", "product discovery", "consultant", "management consulting", "business strategy", "growth strategy", "digital transformation", "operating model", "process optimization", "market entry", "competitive analysis", "benchmarking", "problem solving", "structured thinking", "client engagement", "c suite", "change management", "analyst", "business analyst", "business analysis", "requirements gathering", "process mapping", "gap analysis", "root cause analysis", "financial modeling", "excel modeling", "reporting", "insights generation", "decision support", "power bi", "tableau", "excel", "advanced excel", "google analytics", "jira", "confluence", "figma", "notion", "aws", "azure", "gcp"]
 DAYS_LIMIT = 5
 
+def extract_company(title):
+    title = title.replace(" | LinkedIn", "").strip()
+
+    if " - " in title:
+        return title.split(" - ")[0].strip().lower()
+
+    if " at " in title.lower():
+        return title.lower().split(" at ")[-1].strip()
+
+    return "unknown"
+
 def fetch_linkedin_jobs():
     queries = [
 "site:linkedin.com/jobs product manager", "site:linkedin.com/jobs associate product manager", "site:linkedin.com/jobs technical program manager",
@@ -43,12 +54,15 @@ def fetch_linkedin_jobs():
 
             # Only keep LinkedIn job links
             if "linkedin.com/jobs" in link:
+                title_clean = title.replace(" | LinkedIn", "")
+                company_name = extract_company(title_clean)
+                
                 all_jobs.append({
-                    "title": title.replace(" | LinkedIn", ""),
-"                    company": title.split(" - ")[0] if " - " in title else "unknown",
-                    "location": "india",
+                    "company": company_name,
+                    "title": title_clean,
+                    "location": res.get("snippet", "").lower(),
                     "url": link,
-                    "date": res.get("snippet", "")    
+                    "date": res.get("snippet", "")
                 })
 
     print("TOTAL LINKEDIN JOBS:", len(all_jobs))
@@ -186,11 +200,6 @@ def run():
 
     df = pd.DataFrame(jobs)
 
-    df = df.sort_values(by="company")
-
-# keep max 3 jobs per company
-    df = df.groupby("company").head(3)
-
     # Normalize location
     df["location"] = df["location"].astype(str).str.lower()
     
@@ -229,6 +238,22 @@ def run():
     df["recency"] = df["date"].apply(mark_recent)
     #df = df[df["date"].apply(is_recent)]
 
+    # Create recency score
+    df["recency_score"] = df["recency"].map({
+        "very recent": 3,
+        "recent": 2,
+        "okay": 1,
+        "old": 0,
+        "unknown": 1
+    })
+
+    # Sort by best jobs first
+    df = df.sort_values(by="recency_score", ascending=False)
+    
+    # Keep top 3 jobs per company
+    df = df.groupby("company").head(3)
+
+    
     import numpy as np
     df = df.loc[:, ~df.columns.duplicated()]
     df = df.replace([np.inf, -np.inf], "")
