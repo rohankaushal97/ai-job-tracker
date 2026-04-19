@@ -11,40 +11,85 @@ import re
 KEYWORDS = ["ai", "artificial intelligence", "machine learning", "ml", "deep learning", "nlp", "computer vision", "predictive modeling", "feature engineering", "model deployment", "mlops", "ai strategy", "ai transformation", "responsible ai", "ai governance", "genai", "llm", "prompt engineering", "rag", "vector databases", "fine tuning", "automation", "intelligent automation", "data", "data science", "data analysis", "data modeling", "data visualization", "business intelligence", "analytics", "sql", "python", "statistics", "hypothesis testing", "a b testing", "forecasting", "data pipelines", "etl", "big data", "data driven decision making", "kpi tracking", "product manager", "product management", "product strategy", "product lifecycle", "product roadmap", "go to market", "gtm strategy", "user research", "user experience", "ux", "customer journey", "product analytics", "feature prioritization", "stakeholder management", "agile", "scrum", "mvp", "product discovery", "consultant", "management consulting", "business strategy", "growth strategy", "digital transformation", "operating model", "process optimization", "market entry", "competitive analysis", "benchmarking", "problem solving", "structured thinking", "client engagement", "c suite", "change management", "analyst", "business analyst", "business analysis", "requirements gathering", "process mapping", "gap analysis", "root cause analysis", "financial modeling", "excel modeling", "reporting", "insights generation", "decision support", "power bi", "tableau", "excel", "advanced excel", "google analytics", "jira", "confluence", "figma", "notion", "aws", "azure", "gcp"]
 DAYS_LIMIT = 5
 
-def extract_company(title):
-    title = title.replace(" | LinkedIn", "").strip()
+TARGET_COMPANIES = [
+    # Indian IT Services / Consulting
+    "tata", "tcs", "infosys", "wipro", "hcl", "hcltech", "tech mahindra", "lti mindtree", "persistent systems", "mphasis", "accenture", "capgemini",
+    "cognizant", "deloitte", "pwc", "ey", "kpmg", "mckinsey", "bcg", "bain",
 
-    if " - " in title:
-        return title.split(" - ")[0].strip().lower()
+    # Big Tech / Global
+    "microsoft", "google", "amazon", "amazon aws", "meta", "apple", "netflix", "oracle", "ibm", "adobe", "salesforce", "sap", "intel", "amd", "nvidia",
+    "qualcomm", "cisco", "vmware", "servicenow", "atlassian", "snowflake", "databricks", "mongodb", "elastic",
 
-    if " at " in title.lower():
-        return title.lower().split(" at ")[-1].strip()
+    # Indian Product / SaaS
+    "zoho", "freshworks", "postman", "browserstack", "chargebee", "cleartax", "coin dcx", "zerodha", "groww", "razorpay", "phonepe", "paytm", "cred",
+    "meesho", "flipkart", "swiggy", "zomato", "ola", "rapido", "make my trip", "goibibo", "oyo", "redbus",
+    
+    # FMCG / Consumer Goods
+    "hul", "hindustan unilever", "itc", "nestle", "britannia", "godrej", "marico", "dabur", "colgate palmolive", "reliance consumer products",
+    "nykaa", "fsn ecommerce", "myntra", "ajio", "reliance retail", "dmart",
 
-    return "unknown"
+    # Banking / Finance / NBFC
+    "hdfc bank", "icici bank", "axis bank", "kotak mahindra bank", "indusind bank", "sbi", "bajaj finance", "bajaj finserv", "lic",
 
-def fetch_linkedin_jobs():
-    queries = [
-"site:linkedin.com/jobs product manager", "site:linkedin.com/jobs associate product manager", "site:linkedin.com/jobs technical program manager",
-"site:linkedin.com/jobs business analyst", "site:linkedin.com/jobs data analyst", "site:linkedin.com/jobs product analyst", "site:linkedin.com/jobs machine learning engineer",
-"site:linkedin.com/jobs GenAI engineer", "site:linkedin.com/jobs LLM engineer", "site:linkedin.com/jobs AI product manager", "site:linkedin.com/jobs data product manager",
-"site:linkedin.com/jobs MLOps engineer", "site:linkedin.com/jobs business intelligence analyst", "site:linkedin.com/jobs decision scientist", "site:linkedin.com/jobs strategy consultant",
-"site:linkedin.com/jobs management consultant", "site:linkedin.com/jobs business consultant", "site:linkedin.com/jobs analytics consultant", "site:linkedin.com/jobs AI ML consultant",
-"site:linkedin.com/jobs operations manager", "site:linkedin.com/jobs supply chain analyst",  "site:linkedin.com/jobs marketing manager", "site:linkedin.com/jobs growth manager",
-"site:linkedin.com/jobs digital marketing manager", "site:linkedin.com/jobs performance marketing manager", "site:linkedin.com/jobs investment banking analyst",
-"site:linkedin.com/jobs equity research analyst", "site:linkedin.com/jobs financial analyst", "site:linkedin.com/jobs venture capital analyst", "site:linkedin.com/jobs private equity analyst"
+    # Fintech / Global Finance
+    "stripe", "visa", "mastercard", "coinbase", "revolut", "wise",
+
+    # AI / New-age startups
+    "openai", "anthropic", "hugging face", "scale ai", "perplexity", "midjourney", "turing", "gupshup", "yellow.ai", "uniphore", "sarvam ai",
+
+    # Semiconductor / Infra / Cloud
+    "arm", "red hat", "workday", "palantir",
+
+    # Mobility / Travel
+    "uber", "lyft", "airbnb", "indigo", "air india"
 ]
 
+TARGET_ROLES = [
+    # Product & Management
+    "product manager", "associate product manager", "senior product manager", "product owner", "technical program manager", "program manager",
+
+    # Software Engineering
+    "software engineer", "software developer", "frontend engineer", "full stack engineer", 
+    "systems engineer", "platform engineer", "api engineer",
+
+    # Infrastructure / DevOps
+    "devops engineer", "site reliability engineer", "sre", "cloud engineer", "infrastructure engineer",
+
+    # Data Roles
+    "data analyst", "business analyst", "analytics engineer", "data engineer", "data scientist", "senior data scientist",
+    "machine learning engineer", "ai engineer", "ml engineer",
+
+    # AI / Research
+    "research scientist", "applied scientist", "ai researcher",
+
+    # Design
+    "ui ux designer", "product designer", "ux researcher",
+
+    # Business / Strategy
+    "growth manager", "product analyst", "strategy analyst", "business intelligence analyst", "consultant",
+
+    # Specialized Tech
+    "solutions architect", "enterprise architect", "quant analyst"
+]
+
+def fetch_linkedin_jobs():
+    queries = []
+    
+    for company in TARGET_COMPANIES:
+        for role in TARGET_ROLES:
+            queries.append(f'site:linkedin.com/jobs "{role}" "{company}"')
+        
     all_jobs = []
 
     for q in queries:
         print("SEARCHING:", q)
 
         params = {
-            "engine": "google",   # ✅ IMPORTANT CHANGE
-            "q": q,
-            "num": 20,
+            "engine": "google",
+            "q": q + "India OR Bangalore OR Bengaluru OR Hyderabad OR Pune OR Mumbai OR Gurgaon OR Delhi OR Noida OR Chennai",
+            "num": 10,
             "api_key": os.getenv("SERPAPI_KEY"),
-            "tbs": "qdr:w"   # ✅ last 24 hours
+            "tbs": "qdr:w"   # last 24 hours
         }
 
         search = GoogleSearch(params)
@@ -57,10 +102,9 @@ def fetch_linkedin_jobs():
             # Only keep LinkedIn job links
             if "linkedin.com/jobs" in link:
                 title_clean = title.replace(" | LinkedIn", "")
-                company_name = extract_company(title_clean)
-                
+
                 all_jobs.append({
-                    "company": company_name,
+                    "company": company.lower(),   # 👈 use QUERY company (NOT extraction)
                     "title": title_clean,
                     "location": res.get("snippet", "").lower(),
                     "url": link,
@@ -69,24 +113,6 @@ def fetch_linkedin_jobs():
 
     print("TOTAL LINKEDIN JOBS:", len(all_jobs))
     return all_jobs
-    
-"""def is_recent(date_str):
-    try:
-        if not date_str:
-            return True  # keep if unknown
-
-        date_str = str(date_str).lower()
-
-        if "day" in date_str:
-            return True
-        if "hour" in date_str:
-            return True
-        if "today" in date_str or "just posted" in date_str:
-            return True
-
-        return False
-    except:
-        return True"""
 
 def mark_recent(date_str):
     try:
@@ -242,12 +268,15 @@ def run():
 
     df = pd.DataFrame(jobs)
 
+    df["company"] = df["company"].astype(str).str.lower()
+
+    df = df[df["company"].isin([c.lower() for c in TARGET_COMPANIES])]
+    
     # Normalize location
     df["location"] = df["location"].astype(str).str.lower()
     
     india_keywords = [
-        "india", "bangalore", "bengaluru", "hyderabad",
-        "pune", "mumbai", "gurgaon", "delhi", "noida", "chennai", "remote"
+        "india", "bangalore", "bengaluru", "hyderabad", "pune", "mumbai", "gurgaon", "delhi", "noida", "chennai"
     ]
     
     df = df[df["location"].apply(lambda x: any(k in x for k in india_keywords))]
