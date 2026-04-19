@@ -30,7 +30,8 @@ def fetch_linkedin_jobs():
             "engine": "google",   # ✅ IMPORTANT CHANGE
             "q": q,
             "num": 20,
-            "api_key": os.getenv("SERPAPI_KEY")
+            "api_key": os.getenv("SERPAPI_KEY"),
+            "tbs": "qdr:d"   # ✅ last 24 hours
         }
 
         search = GoogleSearch(params)
@@ -43,11 +44,11 @@ def fetch_linkedin_jobs():
             # Only keep LinkedIn job links
             if "linkedin.com/jobs" in link:
                 all_jobs.append({
-                    "company": "linkedin",
                     "title": title.replace(" | LinkedIn", ""),
+"                    company": title.split(" - ")[0] if " - " in title else "unknown",
                     "location": "india",
                     "url": link,
-                    "date": "recent"
+                    "date": res.get("snippet", "")    
                 })
 
     print("TOTAL LINKEDIN JOBS:", len(all_jobs))
