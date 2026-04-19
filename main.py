@@ -228,6 +228,12 @@ def run():
     df = df.drop_duplicates()
     df["recency"] = df["date"].apply(mark_recent)
     #df = df[df["date"].apply(is_recent)]
+
+    import numpy as np
+    df = df.loc[:, ~df.columns.duplicated()]
+    df = df.replace([np.inf, -np.inf], "")
+    df = df.fillna("")
+    df = df.astype(str)
     
     upload_to_sheets(df)
     
